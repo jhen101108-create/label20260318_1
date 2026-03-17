@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>實驗室標籤大師</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    
+    <style id="dynamicPageSize"></style>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, '微軟正黑體', sans-serif; background-color: #f4f6f9; padding: 15px 10px; margin: 0; color: #2c3e50; display: flex; justify-content: center; }
+        .ui-container { width: 100%; max-width: 440px; background: #ffffff; padding: 18px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); border: 1px solid #e1e8ed; }
+        h2 { text-align: center; font-size: 22px; font-weight: 800; margin-top: 0; padding-bottom: 12px; color: #2c3e50; border-bottom: 2px dashed #bdc3c7; display: flex; align-items: center; justify-content: center; gap: 8px;}
+        
+        .form-group { margin-bottom: 12px; }
+        label { display: flex; align-items: center; gap: 4px; font-weight: bold; margin-bottom: 6px; font-size: 13px; color: #34495e; }
+        
+        input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #f8fafc; font-family: inherit; transition: all 0.2s ease;}
+        input:focus, select:focus { outline: none; border-color: #3498db; background-color: #fff; box-shadow: 0 0 0 3px rgba(52,152,219,0.15); }
+        
+        .row { display: flex; gap: 10px; }
+        .row .form-group { flex: 1; }
+        .combo-box select { margin-bottom: 6px; background-color: #e8f4f8; color: #0984e3; font-weight: bold; border: 1px solid #74b9ff; cursor: pointer; }
+        
+        .btn-small { width: auto; flex: none; padding: 6px 12px; font-size: 13px; font-weight: bold; margin-top: 0; border-radius: 6px; color: #fff; border: none; cursor: pointer; transition: transform 0.1s;}
+        .btn-small:active { transform: scale(0.95); }
+        .btn-today { background-color: #e74c3c; box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3); }
+        
+        .btn-size-large { background-color: #9b59b6; box-shadow: 0 2px 4px rgba(155, 89, 182, 0.3); }
+        .btn-size-small { background-color: #3498db; box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3); }
+        
+        .tabs { display: flex; margin-top: 18px; border-bottom: 3px solid #3498db; }
+        .tab-btn { flex: 1; text-align: center; padding: 10px 4px; cursor: pointer; background: #f1f5f9; font-weight: bold; font-size: 14px; color: #64748b; border-radius: 10px 10px 0 0; transition: 0.3s; margin: 0 2px; }
+        .tab-btn.active { background: #3498db; color: #fff; }
+        .tab-content { display: none; padding: 18px 0 0 0; }
+        .tab-content.active { display: block; }
+
+        .sop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-sop { padding: 12px 4px; font-size: 13px; font-weight: bold; color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.15); transition: transform 0.1s; }
+        .btn-sop:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .bg-sys { background: #34495e; } .bg-spec { background: #8e44ad; } .bg-lin { background: #2980b9; } 
+        .bg-acc { background: #c0392b; } .bg-prec { background: #27ae60; } .bg-stab { background: #d35400; } .bg-lim { background: #7f8c8d; }
+        .bg-rt1 { background: #16a085; } .bg-rt2 { background: #2980b9; } .bg-rt3 { background: #8e44ad; } .bg-rt4 { background: #f39c12; }
+
+        .transfer-box { background: #f0f7fa; border: 2px dashed #74b9ff; padding: 15px; border-radius: 12px; margin-top: 18px; }
+        .transfer-title { text-align: center; font-size: 14px; font-weight: bold; color: #0984e3; margin-bottom: 10px; }
+        .action-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .btn-action { flex: 1 1 30%; padding: 12px 6px; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; }
+        .btn-action:active { transform: scale(0.97); }
+        .btn-qr { background-color: #8e44ad; }
+        .btn-json { background-color: #f39c12; }
+        
+        .main-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-print { background-color: #2ecc71; flex: 2; padding: 14px; font-size: 16px; border-radius: 8px; color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);} 
+        .btn-clear { background-color: #e74c3c; flex: 1; border-radius: 8px; color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);}
+
+        #printArea { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; }
+        .label-box { background: white; border: 1px dashed #e74c3c; box-sizing: border-box; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; color: black; align-items: flex-start; }
+        .btn-delete { position: absolute; top: 2px; right: 2px; background: #e74c3c; color: white; border: none; border-radius: 4px; width: 20px; height: 20px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 0 20px rgba(255,255,255,0.2); text-align: center; }
+        .btn-close-modal { padding: 10px 30px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; background: #e74c3c; color: white; cursor: pointer; }
+
+        .scanner-container { width: 320px; height: 320px; position: relative; overflow: hidden; border-radius: 12px; box-shadow: 0 0 20px rgba(52,152,219,0.5); background: #000; margin-bottom: 10px; }
+        #videoElement { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .scanner-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 10; }
+        .scanner-box { width: 200px; height: 200px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6); position: relative; border-radius: 10px; }
+        .scanner-box::before, .scanner-box::after, .scanner-box .corner-tr, .scanner-box .corner-bl { content: ''; position: absolute; width: 25px; height: 25px; border-color: #2ecc71; border-style: solid; }
+        .scanner-box::before { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-radius: 8px 0 0 0; }
+        .scanner-box::after { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-radius: 0 0 8px 0; }
+        .scanner-box .corner-tr { top: -2px; right: -2px; border-width: 4px 4px 0 0; border-radius: 0 8px 0 0; }
+        .scanner-box .corner-bl { bottom: -2px; left: -2px; border-width: 0 0 4px 4px; border-radius: 0 0 0 8px; }
+        .scan-line { width: 100%; height: 2px; background: rgba(46, 204, 113, 0.8); position: absolute; top: 0; left: 0; box-shadow: 0 0 10px rgba(46, 204, 113, 1); animation: scanAnim 2s infinite linear; }
+        @keyframes scanAnim { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+        .info-hint { background-color: #fff4e6; color: #d35400; padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; text-align: center; margin-bottom: 15px; border: 1px dashed #f39c12; box-shadow: 0 2px 5px rgba(243, 156, 18, 0.1); }
+
+        @media print {
+            body, html { background: white; margin: 0; padding: 0; }
+            .hide-on-print { display: none !important; }
+            .ui-container { max-width: none; background: transparent; padding: 0; border: none; box-shadow: none; }
+            #printArea { display: block; margin: 0; padding: 0; }
+            .label-box { border: none; margin: 0; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="ui-container">
+    <div class="hide-on-print">
+        <h2>🧪 實驗室標籤大師</h2>
+        
+        <div style="background: #ffffff; padding: 15px; border-radius: 12px; border: 1px solid #e1e8ed; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+            
+            <div class="info-hint">
+                💡 列印端請確認「人員、代號/批號、日期」是否需更新！
+            </div>
+            
+            <div class="row">
+                <div class="form-group"><label>👤 人員</label><input type="text" id="userName"></div>
+                <div class="form-group"><label>🏷️ 原料、產品代號 (如TA03)</label><input type="text" id="pCode" value="TA03"></div>
+            </div>
+            <div class="row">
+                <div class="form-group" style="flex: 1.3;"><label>🔢 起始批號 (如0001，不須輸入代號)</label><input type="text" id="bNum" value="0001"></div>
+                <div class="form-group" style="flex: 0.7;"><label>📦 連續批數</label><input type="number" id="bCount" value="1" min="1"></div>
+            </div>
+            <div class="row">
+                <div class="form-group"><label>📅 配製日期</label><div style="display: flex; gap: 6px;"><input type="date" id="prepDate" style="flex:1;"><button class="btn-small btn-today" onclick="setToday()">今</button></div></div>
+                <div class="form-group"><label>⏳ 有效日期</label><input type="date" id="expDate"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ecf0f1;">
+                <label style="margin: 0;">📏 尺寸(mm):</label>
+                <div style="display: flex; gap: 6px;">
+                    <button class="btn-small btn-size-large" onclick="setLabelSize(40, 20)">大(40x20)</button>
+                    <button class="btn-small btn-size-small" onclick="setLabelSize(25, 15)">小(25x15)</button>
+                </div>
+            </div>
+            <div class="row" style="margin-top: 8px;">
+                <input type="number" id="labelWidth" value="40" style="text-align: center;" onchange="renderPreview()"> <span style="display: flex; align-items: center; font-weight: bold; color: #7f8c8d;">x</span> 
+                <input type="number" id="labelHeight" value="20" style="text-align: center;" onchange="renderPreview()">
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab-btn active" onclick="switchTab(1)">📝 自訂</div>
+            <div class="tab-btn" onclick="switchTab(2)">🚀 確效專區</div>
+            <div class="tab-btn" onclick="switchTab(3)">🧪 日常檢驗</div>
+        </div>
+
+        <div id="tab1" class="tab-content active">
+            <div class="form-group combo-box">
+                <label>🔬 檢驗項目</label>
+                <select id="itemSelect" onchange="fillInput('item', this.value)"><option value="">▼ 快速帶入 ▼</option><option value="System">System</option><option value="linearity">linearity</option><option value="accuracy">accuracy</option><option value="precision">precision</option><option value="intermediate precision">intermediate precision</option><option value="solution stability">solution stability</option><option value="specificity">specificity</option><option value="LOD">LOD</option><option value="LOQ">LOQ</option><option value="assay">assay</option><option value="CU">CU</option><option value="Diss">Diss</option><option value="Imp">Imp</option><option value="ID">ID</option></select>
+                <input type="text" id="item">
+            </div>
+            <div class="form-group combo-box">
+                <label>🧪 樣品字首</label>
+                <select id="sampleSelect" onchange="fillInput('sampleType', this.value)"><option value="">▼ 快速帶入 ▼</option><option value="Sa">Sa</option><option value="STD">STD</option><option value="BK">BK</option></select>
+                <input type="text" id="sampleType" value="Sa">
+            </div>
+            <div class="row">
+                <div class="form-group"><label>🔢 起始號</label><input type="text" id="startNum"></div>
+                <div class="form-group"><label>🖨️ 印幾張</label><input type="number" id="printCount" value="1" min="1"></div>
+            </div>
+            <div class="form-group"><label>💧 濃度</label><input type="text" id="conc"></div>
+            <button class="btn-action" style="width: 100%; margin-top: 10px; background-color: #3498db;" onclick="addCustomLabel()">➕ 加入預覽列</button>
+        </div>
+
+        <div id="tab2" class="tab-content">
+            <div class="sop-grid">
+                <button class="btn-sop bg-sys" onclick="addSOP('system')">1. System</button>
+                <button class="btn-sop bg-spec" onclick="addSOP('specificity')">2. Specificity</button>
+                <button class="btn-sop bg-lin" onclick="addSOP('linearity')">3. Linearity</button>
+                <button class="btn-sop bg-acc" onclick="addSOP('accuracy')">4. Accuracy</button>
+                <button class="btn-sop bg-prec" onclick="addSOP('precision')">5. Precision</button>
+                <button class="btn-sop bg-prec" onclick="addSOP('intermediate')">6. Inter. Prec.</button>
+                <button class="btn-sop bg-stab" onclick="addSOP('stability')">7. Stability</button>
+                <button class="btn-sop bg-lim" onclick="addSOP('lod')">8. LOD</button>
+                <button class="btn-sop bg-lim" onclick="addSOP('loq')">9. LOQ</button>
+            </div>
+        </div>
+
+        <div id="tab3" class="tab-content">
+            <div class="sop-grid">
+                <button class="btn-sop bg-rt1" onclick="addRoutine('Assay', 2)">1. Assay</button>
+                <button class="btn-sop bg-rt1" onclick="addRoutine('CU', 10)">2. CU</button>
+                <button class="btn-sop bg-rt1" onclick="addRoutine('CU S2', 20)">3. CU S2</button>
+                <button class="btn-sop bg-rt2" onclick="addRoutine('Dissolution', 6)">4. Dissolution</button>
+                <button class="btn-sop bg-rt2" onclick="addRoutine('Dissolution S2', 6)">5. Dissolution S2</button>
+                <button class="btn-sop bg-rt2" onclick="addRoutine('Dissolution S3', 12)">6. Dissolution S3</button>
+                <button class="btn-sop bg-rt3" onclick="addRoutine('ID', 1, false)">7. ID</button>
+                <button class="btn-sop bg-rt4" onclick="addRoutine('impurity', 2)">8. impurity</button>
+                <button class="btn-sop bg-rt4" onclick="addRoutine('BU', 3)">9. BU</button>
+            </div>
+        </div>
+
+        <input type="file" id="jsonInput" accept=".json" style="display:none" onchange="importJSON(event)">
+        <input type="file" id="qrImageInput" accept="image/*" style="display:none" onchange="readQRImage(event)">
+
+        <div class="transfer-box">
+            <div class="transfer-title">📡 資料傳送門 (手機 ⇆ 電腦)</div>
+            <div class="action-group" style="margin-bottom: 5px;">
+                <button class="btn-action btn-qr" style="flex: 1 1 100%; font-size: 14px; background:#9b59b6;" onclick="generateQR()">📲 1.手機：產生分享 QR 碼</button>
+            </div>
+            <div class="action-group">
+                <button class="btn-action btn-qr" onclick="if(checkPreconditions()) { startScanner(); }">📹 2.電腦：開啟鏡頭掃描</button>
+                <button class="btn-action btn-qr" style="background:#8e44ad;" onclick="if(checkPreconditions()) { document.getElementById('qrImageInput').click(); }">🖼️ 2.電腦：讀圖片</button>
+                <button class="btn-action btn-json" onclick="exportJSON()">💾 導 JSON</button>
+                <button class="btn-action btn-json" onclick="if(checkPreconditions()) { document.getElementById('jsonInput').click(); }">📂 讀 JSON</button>
+            </div>
+        </div>
+
+        <div class="main-actions">
+            <button class="btn-clear" onclick="clearPreview()">🗑️ 全部清空</button>
+            <button class="btn-print" onclick="printLabels()">🖨️ 電腦直接列印</button>
+        </div>
+        
+    </div> 
+    <div id="printArea"></div>
+</div>
+
+<div id="qrModal" class="modal">
+    <div style="color: white; margin-bottom: 10px; font-weight: bold; text-align: center;">請將此條碼對準電腦視訊鏡頭<br>(或截圖傳送)</div>
+    <div class="modal-content"><canvas id="qrCanvas"></canvas></div>
+    <button class="btn-close-modal" onclick="closeQR()">關閉</button>
+</div>
+
+<div id="scannerModal" class="modal">
+    <div style="color: white; margin-bottom: 10px; font-weight: bold; text-align: center; font-size: 18px;">正在尋找 QR Code...</div>
+    <div class="scanner-container">
+        <video id="videoElement" autoplay playsinline></video>
+        <div class="scanner-overlay">
+            <div class="scanner-box"><div class="corner-tr"></div><div class="corner-bl"></div><div class="scan-line"></div></div>
+        </div>
+    </div>
+    <div style="color: #f1c40f; margin-bottom: 15px; font-size: 14px; font-weight:bold; text-align:center;">請將手機的 QR Code<br>「剛好對齊」綠色瞄準框！</div>
+    <button class="btn-close-modal" onclick="stopScanner()">取消掃描</button>
+</div>
+
+<script>
+    let globalLabels = [];
+    let videoStream = null;
+    let scanningActive = false;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        ['userName', 'pCode', 'bNum', 'prepDate', 'expDate'].forEach(id => {
+            document.getElementById(id).addEventListener('input', renderPreview);
+        });
+    });
+
+    function switchTab(t) {
+        document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i + 1 === t));
+        document.querySelectorAll('.tab-content').forEach((c, i) => c.classList.toggle('active', i + 1 === t));
+    }
+
+    function setToday() {
+        const d = new Date(); 
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        document.getElementById("prepDate").value = `${y}-${m}-${day}`;
+        renderPreview();
+    }
+
+    function setLabelSize(w, h) {
+        document.getElementById("labelWidth").value = w; document.getElementById("labelHeight").value = h;
+        renderPreview(); 
+    }
+
+    function fillInput(i, v) { if (v) document.getElementById(i).value = v; document.getElementById(i + "Select").selectedIndex = 0; }
+
+    // 🌟 將 alert 強制阻擋，改為 confirm 柔性提醒
+    function checkPreconditions() {
+        const name = document.getElementById("userName").value.trim();
+        const pCode = document.getElementById("pCode").value.trim();
+        const bNum = document.getElementById("bNum").value.trim();
+        const prepDate = document.getElementById("prepDate").value.trim();
+        
+        if (!name || !pCode || !bNum || !prepDate) {
+            // 如果沒填滿，跳出選擇視窗。如果使用者按「確定(繼續)」，就 return true 放行。
+            return confirm("💡 貼心提醒：您尚未填寫完整的「人員」、「原料、產品代號」、「起始批號」或「配製日期」！\n\n請問確定要直接繼續掃描/匯入嗎？");
+        }
+        return true; // 資料都有填寫，直接放行
+    }
+
+    function addCustomLabel() {
+        const item = document.getElementById("item").value.trim(), conc = document.getElementById("conc").value.trim();
+        const sampleType = document.getElementById("sampleType").value.trim(), startNumStr = document.getElementById("startNum").value.trim();
+        const pCode = document.getElementById("pCode").value.trim();
+        const bNum = document.getElementById("bNum").value.trim();
+        const fullCode = pCode + bNum;
+        
+        const count = parseInt(document.getElementById("printCount").value) || 1;
+        for (let i = 0; i < count; i++) {
+            globalLabels.push({ item: item, sample: sampleType ? `${sampleType}${startNumStr !== "" ? parseInt(startNumStr) + i : ""}` : "", conc: conc, code: fullCode });
+        }
+        renderPreview();
+    }
+
+    function addSOP(type) {
+        let inputs = []; 
+        const fullCode = document.getElementById("pCode").value.trim() + document.getElementById("bNum").value.trim();
+        
+        switch(type) {
+            case 'system': let sysStock = prompt("【System】有幾瓶 STD stock？(若無填0)", "1"); if (sysStock === null) return; for(let i=1; i<=parseInt(sysStock||0); i++) inputs.push({item: "System", sample: `STD stock ${i}`, conc: "", code: fullCode}); inputs.push({item: "System", sample: "STD", conc: "", code: fullCode}); break;
+            case 'specificity': inputs.push({item: "specificity", sample: "Blank", conc: "", code: fullCode}); let pStock = prompt("【Specificity】Placebo stock 瓶數？(若無填0)", "1"); if (pStock === null) return; for(let i=1; i<=parseInt(pStock||0); i++) inputs.push({item: "specificity", sample: `Placebo stock ${i}`, conc: "", code: fullCode}); inputs.push({item: "specificity", sample: "Placebo", conc: "", code: fullCode}); let sStock = prompt("【Specificity】Sa stock 瓶數？(若無填0)", "1"); if (sStock === null) return; for(let i=1; i<=parseInt(sStock||0); i++) inputs.push({item: "specificity", sample: `Sa stock ${i}`, conc: "", code: fullCode}); inputs.push({item: "specificity", sample: "Sa", conc: "", code: fullCode}); break;
+            case 'linearity': let linStock = prompt("【Linearity】API stock 瓶數？(若無填0)", "1"); if (linStock === null) return; for(let i=1; i<=parseInt(linStock||0); i++) inputs.push({item: "linearity", sample: `stock ${i}`, conc: "", code: fullCode}); let linConcs = prompt("請輸入 5 個線性濃度 (用逗號分隔)：", "50,75,100,125,150"); if (linConcs === null) return; let linArr = linConcs.split(","); for(let i=0; i<5; i++) inputs.push({item: "linearity", sample: `Level ${i+1}`, conc: linArr[i] ? linArr[i].trim() : "", code: fullCode}); break;
+            case 'accuracy': let accApi = prompt("【Accuracy】API stock 瓶數？(若無填0)", "1"); if (accApi === null) return; for(let i=1; i<=parseInt(accApi||0); i++) inputs.push({item: "accuracy", sample: `API stock ${i}`, conc: "", code: fullCode}); let accPla = prompt("【Accuracy】Placebo stock 瓶數？(若無填0)", "1"); if (accPla === null) return; for(let i=1; i<=parseInt(accPla||0); i++) inputs.push({item: "accuracy", sample: `Placebo stock ${i}`, conc: "", code: fullCode}); let accConcs = prompt("3 個準確度濃度 (用逗號分隔)：", "80%,100%,120%"); if (accConcs === null) return; let accArr = accConcs.split(","); for(let i=0; i<3; i++) for(let j=0; j<3; j++) inputs.push({item: "accuracy", sample: `Sa${j+1}`, conc: accArr[i] ? accArr[i].trim() : "", code: fullCode}); break;
+            case 'precision': for(let i=1; i<=6; i++) inputs.push({item: "precision", sample: `Sa${i}`, conc: "", code: fullCode}); break;
+            case 'intermediate': for(let i=1; i<=6; i++) inputs.push({item: "intermediate precision", sample: `Sa${i}`, conc: "", code: fullCode}); break;
+            case 'stability': let stabStd = prompt("【Stability】STD stock 瓶數？(若無填0)", "1"); if (stabStd === null) return; for(let i=1; i<=parseInt(stabStd||0); i++) inputs.push({item: "solution stability", sample: `STD stock ${i}`, conc: "", code: fullCode}); inputs.push({item: "solution stability", sample: "STD", conc: "", code: fullCode}); let stabSa = prompt("【Stability】Sa stock 瓶數？(若無填0)", "1"); if (stabSa === null) return; for(let i=1; i<=parseInt(stabSa||0); i++) inputs.push({item: "solution stability", sample: `Sa stock ${i}`, conc: "", code: fullCode}); inputs.push({item: "solution stability", sample: "Sa", conc: "", code: fullCode}); break;
+            case 'lod': let lodCnt = prompt("【LOD】LOD stock 瓶數？(若無填0)", "1"); if (lodCnt === null) return; for(let i=1; i<=parseInt(lodCnt||0); i++) inputs.push({item: "LOD", sample: `LOD stock ${i}`, conc: "", code: fullCode}); inputs.push({item: "LOD", sample: "LOD", conc: "", code: fullCode}); break;
+            case 'loq': let loqCnt = prompt("【LOQ】LOQ stock 瓶數？(若無填0)", "1"); if (loqCnt === null) return; for(let i=1; i<=parseInt(loqCnt||0); i++) inputs.push({item: "LOQ", sample: `LOQ stock ${i}`, conc: "", code: fullCode}); inputs.push({item: "LOQ", sample: "LOQ", conc: "", code: fullCode}); break;
+        }
+        globalLabels.push(...inputs); renderPreview();
+    }
+
+    function addRoutine(itemName, defaultSaCount, askResolution = true) {
+        let inputs = [];
+        const pCode = document.getElementById("pCode").value.trim();
+        const bNumStr = document.getElementById("bNum").value.trim();
+        const bCount = parseInt(document.getElementById("bCount").value) || 1;
+        
+        const baseFullCode = pCode + bNumStr; 
+
+        if (askResolution) {
+            if (confirm(`【${itemName}】需要配製 Resolution 嗎？\n(多批將共用此組)`)) {
+                let resStock = prompt(`請輸入 Resolution stock 有幾瓶？(若無填 0)`, "1"); if (resStock === null) return; 
+                for(let i=1; i<=parseInt(resStock||0); i++) inputs.push({item: itemName, sample: `Resolution stock ${i}`, conc: "", code: baseFullCode});
+                inputs.push({item: itemName, sample: "Resolution", conc: "", code: baseFullCode});
+            }
+        }
+        let stdStock = prompt(`【${itemName}】請輸入 STD stock 有幾瓶？(若無填 0)`, "1"); if (stdStock === null) return;
+        for(let i=1; i<=parseInt(stdStock||0); i++) inputs.push({item: itemName, sample: `STD stock ${i}`, conc: "", code: baseFullCode});
+        inputs.push({item: itemName, sample: "STD", conc: "", code: baseFullCode});
+        
+        let saStock = prompt(`【${itemName}】請輸入「每一批」的 Sa stock 有幾瓶？(若無填 0)`, "1"); if (saStock === null) return;
+        let saFinalCount = prompt(`【${itemName}】請確認「每一批」最終樣品 (Sa) 有幾支？`, defaultSaCount); if (saFinalCount === null) return;
+        
+        let isNumericBatch = !isNaN(bNumStr) && bNumStr.length > 0;
+        let batchLength = bNumStr.length;
+        
+        const symbols = ['●', '★', '▲', '■', '◆'];
+
+        if (parseInt(saStock) > 0) {
+            for (let b = 0; b < bCount; b++) {
+                let currentBatchStr = bNumStr;
+                if (isNumericBatch && b > 0) currentBatchStr = String(parseInt(bNumStr) + b).padStart(batchLength, '0');
+                else if (!isNumericBatch && b > 0) currentBatchStr = bNumStr + "-" + (b+1); 
+                
+                let fullSampleCode = pCode + currentBatchStr;
+                
+                let badgeStr = "";
+                if (bCount > 1) {
+                    let symbolChar = symbols[Math.floor(b / 5) % symbols.length];
+                    badgeStr = symbolChar.repeat((b % 5) + 1);
+                }
+
+                for(let i=1; i<=parseInt(saStock); i++) {
+                    let sampleName = `Sa stock ${i}` + (badgeStr ? ` ${badgeStr}` : "");
+                    inputs.push({item: itemName, sample: sampleName, conc: "", code: fullSampleCode});
+                }
+            }
+        }
+        
+        if (parseInt(saFinalCount) > 0) {
+            for (let b = 0; b < bCount; b++) {
+                let currentBatchStr = bNumStr;
+                if (isNumericBatch && b > 0) currentBatchStr = String(parseInt(bNumStr) + b).padStart(batchLength, '0');
+                else if (!isNumericBatch && b > 0) currentBatchStr = bNumStr + "-" + (b+1); 
+                
+                let fullSampleCode = pCode + currentBatchStr;
+                
+                let badgeStr = "";
+                if (bCount > 1) {
+                    let symbolChar = symbols[Math.floor(b / 5) % symbols.length];
+                    badgeStr = symbolChar.repeat((b % 5) + 1);
+                }
+
+                let count = parseInt(saFinalCount);
+                for(let i=1; i<=count; i++) {
+                    let baseSampleName = (count === 1 && itemName === "ID") ? "Sa" : `Sa${i}`;
+                    let sampleName = baseSampleName + (badgeStr ? ` ${badgeStr}` : "");
+                    inputs.push({item: itemName, sample: sampleName, conc: "", code: fullSampleCode});
+                }
+            }
+        }
+        
+        globalLabels.push(...inputs); renderPreview();
+    }
+
+    function clearPreview() { if(confirm("確定要清空嗎？")) { globalLabels = []; renderPreview(); } }
+    function removeSingleLabel(index) { globalLabels.splice(index, 1); renderPreview(); }
+
+    function renderPreview() {
+        const name = document.getElementById("userName").value.trim();
+        const globalPCode = document.getElementById("pCode").value.trim();
+        const globalBNum = document.getElementById("bNum").value.trim();
+        const fallbackCode = globalPCode + globalBNum;
+        
+        let prepDate = document.getElementById("prepDate").value.replace(/-/g, '');
+        let expDate = document.getElementById("expDate").value.replace(/-/g, '');
+        
+        let combinedDates = [];
+        if (prepDate) combinedDates.push(`配:${prepDate}`);
+        if (expDate) combinedDates.push(`效:${expDate}`);
+        let dateStr = combinedDates.join(" ");
+
+        const width = document.getElementById("labelWidth").value;
+        const height = document.getElementById("labelHeight").value;
+
+        document.getElementById("dynamicPageSize").innerHTML = `@media print { @page { size: ${width}mm ${height}mm; margin: 0; } body { margin: 0; } }`;
+        const printArea = document.getElementById("printArea"); printArea.innerHTML = ""; 
+
+        if(globalLabels.length > 0) {
+            const countDiv = document.createElement("div"); countDiv.className = "hide-on-print"; 
+            countDiv.innerHTML = `🌟 目前共 <strong>${globalLabels.length}</strong> 張標籤`;
+            countDiv.style.cssText = "font-size: 13px; color: #e67e22; font-weight: bold; margin-bottom: 5px;"; printArea.appendChild(countDiv);
+        }
+
+        globalLabels.forEach((label, index) => {
+            const displayCode = label.code && label.code !== "" ? label.code : fallbackCode;
+
+            const labelDiv = document.createElement("div"); 
+            labelDiv.className = "label-box";
+            labelDiv.style.width = `${width}mm`; 
+            labelDiv.style.height = `${height}mm`;
+            labelDiv.style.padding = "1.5mm"; 
+            labelDiv.style.boxSizing = "border-box";
+
+            const contentDiv = document.createElement("div");
+            contentDiv.style.width = "100%"; 
+            contentDiv.style.height = "100%";
+            contentDiv.style.display = "flex"; 
+            contentDiv.style.flexDirection = "column";
+            contentDiv.style.justifyContent = "center"; 
+            contentDiv.style.alignItems = "flex-start";
+
+            let sampleHtml = label.sample || "";
+            if (sampleHtml.toLowerCase().includes("stock")) {
+                sampleHtml = sampleHtml.replace(/(stock\s*\d*)/ig, '<span style="background-color: black; color: white; padding: 0 4px; border-radius: 4px; display: inline-block;">$1</span>');
+            }
+
+            let lines = [];
+            if (displayCode) lines.push(`<div style="font-size: 1.25em; font-weight: bold; line-height: 1.1;">${displayCode}</div>`);
+            
+            let itemSample = [label.item, sampleHtml].filter(Boolean).join(" - ");
+            if (itemSample) lines.push(`<div style="font-size: 1.15em; font-weight: bold; line-height: 1.1; margin-top: 1px;">${itemSample}</div>`);
+            
+            if (label.conc) lines.push(`<div style="font-size: 0.9em; line-height: 1.1; margin-top: 1px;">${label.conc}</div>`);
+            if (name) lines.push(`<div style="font-size: 0.85em; line-height: 1.1; margin-top: 1px;">${name}</div>`);
+            if (dateStr) lines.push(`<div style="font-size: 0.85em; line-height: 1.1; margin-top: 1px;">${dateStr}</div>`);
+            
+            const measureDiv = document.createElement("div");
+            measureDiv.style.display = "inline-block";
+            measureDiv.innerHTML = lines.join("");
+            contentDiv.appendChild(measureDiv);
+
+            const delBtn = document.createElement("button"); delBtn.innerHTML = "✖"; delBtn.className = "btn-delete hide-on-print";
+            delBtn.onclick = function() { removeSingleLabel(index); };
+            
+            labelDiv.appendChild(delBtn); 
+            labelDiv.appendChild(contentDiv); 
+            printArea.appendChild(labelDiv);
+
+            let currentSize = 32; 
+            contentDiv.style.fontSize = currentSize + "px";
+            
+            const maxHeight = labelDiv.clientHeight - 3; 
+            const maxWidth = labelDiv.clientWidth - 3;
+
+            while ((measureDiv.offsetHeight > maxHeight || measureDiv.offsetWidth > maxWidth) && currentSize > 8) {
+                currentSize -= 0.5;
+                contentDiv.style.fontSize = currentSize + "px";
+            }
+        });
+    }
+
+    function printLabels() {
+        if(globalLabels.length === 0) return alert("⚠️ 預覽區沒有標籤喔！");
+        window.print();
+    }
+
+    function decodeAndImportQR(qrData) {
+        try {
+            let decodedString = qrData;
+            try { if (qrData.includes("%")) decodedString = decodeURIComponent(qrData); } catch(e) {}
+            
+            let imported = [];
+            if (decodedString.startsWith("[")) {
+                imported = JSON.parse(decodedString);
+                if(imported.length > 0 && Array.isArray(imported[0])) {
+                    imported = imported.map(arr => ({ item: arr[0], sample: arr[1], conc: arr[2], code: arr[3]||"" }));
+                }
+            } else {
+                imported = decodedString.split("~").map(row => { 
+                    const parts = row.split("|"); 
+                    return { item: parts[0]||"", sample: parts[1]||"", conc: parts[2]||"", code: parts[3]||"" }; 
+                });
+            }
+            
+            if (Array.isArray(imported) && imported.length > 0) {
+                globalLabels = globalLabels.concat(imported); renderPreview();
+                alert(`✅ 成功掃描，已完美匯入 ${imported.length} 張標籤！`); 
+                return true;
+            }
+        } catch(err) { console.error(err); }
+        return false;
+    }
+
+    function generateQR() {
+        if(globalLabels.length === 0) return alert("⚠️ 沒有標籤可產生 QR Code！");
+        const compressedData = globalLabels.map(l => `${l.item||""}|${l.sample||""}|${l.conc||""}|${l.code||""}`).join("~");
+        
+        if(compressedData.length > 2500) return alert("⚠️ 標籤數量過多，請改用「導出 JSON 檔」。");
+        document.getElementById("qrModal").style.display = "flex";
+        
+        new QRious({ element: document.getElementById("qrCanvas"), value: compressedData, size: 320, level: 'L' });
+    }
+    
+    function closeQR() { document.getElementById("qrModal").style.display = "none"; }
+
+    function exportJSON() {
+        if(globalLabels.length === 0) return alert("⚠️ 無標籤可匯出！");
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(globalLabels));
+        const filename = document.getElementById("pCode").value + document.getElementById("bNum").value;
+        const a = document.createElement('a'); a.href = dataStr; a.download = `LabLabels_${filename || "export"}.json`;
+        document.body.appendChild(a); a.click(); a.remove();
+    }
+    
+    function importJSON(event) {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (Array.isArray(imported)) { globalLabels = globalLabels.concat(imported); renderPreview(); alert(`✅ 成功匯入 ${imported.length} 張標籤！`); }
+            } catch(err) { alert("❌ JSON 格式錯誤！"); }
+        }; reader.readAsText(file); event.target.value = ''; 
+    }
+
+    function readQRImage(event) {
+        const file = event.target.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                canvas.width = img.width; canvas.height = img.height;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
+                if (code) { if(!decodeAndImportQR(code.data)) alert("❌ 解析失敗，內容不符。"); } else { alert("❌ 解析不到 QR Code！"); }
+            }; img.src = e.target.result;
+        }; reader.readAsDataURL(file); event.target.value = '';
+    }
+
+    function startScanner() {
+        const video = document.getElementById("videoElement"); const modal = document.getElementById("scannerModal");
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
+            scanningActive = true; videoStream = stream; video.srcObject = stream; video.setAttribute("playsinline", true);
+            video.play(); modal.style.display = "flex"; requestAnimationFrame(tick);
+        }).catch(function(err) { alert("❌ 無法開啟相機，請確認電腦有連接視訊鏡頭，並允許瀏覽器存取相機權限！"); });
+    }
+    
+    function stopScanner() { scanningActive = false; if(videoStream) { videoStream.getTracks().forEach(track => track.stop()); } document.getElementById("scannerModal").style.display = "none"; }
+    
+    function tick() {
+        if (!scanningActive) return; const video = document.getElementById("videoElement");
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            const canvas = document.createElement("canvas"); canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            const ctx = canvas.getContext("2d"); ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+            if (code) { if(decodeAndImportQR(code.data)) { stopScanner(); return; } }
+        }
+        requestAnimationFrame(tick);
+    }
+</script>
+
+</body>
+</html>
